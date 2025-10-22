@@ -24,8 +24,8 @@ This PowerShell script automates the process of unlocking SharePoint Online item
 ### What It Does
 
 - Connects to multiple SharePoint Online sites
-- Scans all non-hidden lists for locked record items
-- Identifies items locked with compliance flags (7, 519)
+- Scans all non-hidden lists for items with compliance flags
+- Identifies items with any non-null, non-zero compliance flags
 - Unlocks items using the SharePoint REST API
 - Provides detailed logging and progress tracking
 - Handles SharePoint throttling automatically
@@ -33,7 +33,7 @@ This PowerShell script automates the process of unlocking SharePoint Online item
 ## ✨ Features
 
 - **Multi-Site Processing**: Process multiple SharePoint sites from a text file
-- **Intelligent Detection**: Automatically identifies locked items using compliance flags
+- **Intelligent Detection**: Automatically identifies items with compliance flags set
 - **Item Title Display**: Shows both Item ID and Title for easy identification
 - **Throttling Protection**: Implements Microsoft's recommended throttling protection strategies
   - Honors Retry-After headers
@@ -161,38 +161,45 @@ Throttling Protection: Enabled
 Processing site: https://contoso.sharepoint.com/sites/Site1
 Found 5 non-hidden lists with items in this site
   Processing list 1 of 5: Documents (250 items)
-      → Item ID 42 ('Q3 Report.docx') is LOCKED (_ComplianceFlags: 519)
+      → Item ID 42 ('Q3 Report.docx') has (_ComplianceFlags: 519)
       ✓ Successfully unlocked record item ID 42 ('Q3 Report.docx') in list 'Documents'
-    Summary: 1 locked record items found, 1 unlocked
+    Summary: 1 items with compliance flags found, 1 unlocked
 
 =================================
 PROCESSING COMPLETE
 =================================
 Sites processed: 3 of 3
 Lists processed: 15
-Total locked record items unlocked: 47
+Total record items unlocked: 47
 =================================
 Log file saved to: C:\Users\user\AppData\Local\Temp\Unlock_Record_Items_2025-10-21_14-30-45_logfile.log
 ```
 
 ## 🔍 Understanding Compliance Flags
 
-The script identifies locked items using the `_ComplianceFlags` field:
+The script processes items based on the `_ComplianceFlags` field:
 
-| Flag Value | Status | Action |
-|------------|--------|--------|
-| `null` or `0` | No compliance label | Skip (no action needed) |
-| `7` | Locked for the first time | **Unlock** |
-| `519` | Locked/relocked | **Unlock** |
-| `771` | Already unlocked | Skip (no action needed) |
-| Other | Unknown status | Log as warning |
+| Flag Value | Action |
+|------------|--------|
+| `null`, `0`, or empty | Skip (no compliance flags set) |
+| **Any other value** | **Attempt to unlock** |
 
 ### How It Works
 
 1. The script retrieves the `_ComplianceFlags` value for each item
-2. Items with flags `7` or `519` are identified as locked
+2. Items with any non-null, non-zero compliance flag are processed
 3. The script calls the SharePoint REST API to unlock these items
 4. Success/failure is logged for audit purposes
+
+### Why This Approach?
+
+Different SharePoint environments and compliance configurations can use different `_ComplianceFlags` values to indicate locked states. Rather than maintaining a list of specific values, this script takes a comprehensive approach:
+
+- **Processes all items with compliance flags set** - ensures no locked items are missed
+- **Handles environment variations** - works across different SharePoint tenants and compliance configurations
+- **Future-proof** - automatically handles new flag values introduced by Microsoft
+
+**Note**: If an item is already unlocked but has a compliance flag set, the unlock operation will either succeed harmlessly or report that the item is already unlocked.
 
 ## 🛡️ Throttling Protection
 
@@ -265,7 +272,7 @@ Example: `C:\Users\john\AppData\Local\Temp\Unlock_Record_Items_2025-10-21_14-30-
 [2025-10-21 14:30:45] [INFO] === UNLOCK RECORD ITEMS SCRIPT STARTED ===
 [2025-10-21 14:30:45] [INFO] Log file: C:\Users\john\AppData\Local\Temp\...
 [2025-10-21 14:30:46] [SUCCESS] Successfully connected to site: https://contoso.sharepoint.com/sites/Site1
-[2025-10-21 14:30:47] [WARNING] Item ID 42 ('Q3 Report.docx') is LOCKED (_ComplianceFlags: 519)
+[2025-10-21 14:30:47] [WARNING] Item ID 42 ('Q3 Report.docx') has (_ComplianceFlags: 519)
 [2025-10-21 14:30:48] [SUCCESS] Successfully unlocked record item ID 42 ('Q3 Report.docx') in list 'Documents'
 ```
 
@@ -338,7 +345,7 @@ Import-Module PnP.PowerShell
 4. **Uncomment Debug Output**
    - Find this line in the script:
      ```powershell
-     # Write-HostAndLog "      → Item $itemDisplayName has no compliance label or is already unlocked..."
+     # Write-VerboseAndLog "Item $itemDisplayName has no compliance flags set..."
      ```
    - Remove the `#` to see all items being processed
 
@@ -384,8 +391,8 @@ Import-Module PnP.PowerShell
 ## 📄 Script Information
 
 - **Author**: Your Name
-- **Version**: 1.0
-- **Last Updated**: October 2025
+- **Version**: 2.0
+- **Last Updated**: October 22, 2025
 - **PowerShell Version**: 5.1+
 - **Dependencies**: PnP.PowerShell
 
