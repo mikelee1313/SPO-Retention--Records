@@ -1,18 +1,19 @@
 
 <#
     .SYNOPSIS
-        Unlocks locked record items across multiple SharePoint Online sites and lists.
+        Unlocks record items with compliance flags set across multiple SharePoint Online sites and lists.
 
     .DESCRIPTION
-        This script connects to multiple SharePoint Online sites and identifies list items that are locked
-        as records (based on _ComplianceFlags values). It then attempts to unlock these items using the
-        SharePoint REST API. The script includes comprehensive throttling protection, retry logic, and
-        detailed logging capabilities.
+        This script connects to multiple SharePoint Online sites and identifies list items that have
+        compliance flags set (based on _ComplianceFlags values). It then attempts to unlock these items 
+        using the SharePoint REST API. The script includes comprehensive throttling protection, retry 
+        logic, and detailed logging capabilities.
         
-        The script identifies locked items by examining the _ComplianceFlags field:
-        - null/0/771 = unlocked or never set
-        - 7 = locked for the first time
-        - 519 = relocked after previous unlock
+        The script processes items by examining the _ComplianceFlags field:
+        - Any item with a non-null, non-zero _ComplianceFlags value will be processed for unlocking
+        - This approach handles all locked states regardless of specific flag values across different 
+          SharePoint environments
+        - Items with null, empty, or 0 values are skipped as they have no compliance restrictions
         
         Throttling protection is implemented with configurable delays between operations and exponential
         backoff retry logic for HTTP 429/503 responses.
@@ -34,7 +35,7 @@
     .NOTES
         File Name      : Unlock-SPListItem.ps1
         Author         : Mike Lee
-        Date           : 10/21/2025
+        Date           : 10/22/2025
         Prerequisite   : PnP.PowerShell module, Entra App Registration with certificate authentication
         
         Required Permissions:
@@ -351,25 +352,15 @@ function Test-ItemIsLocked {
             Write-HostAndLog "      → Item $itemDisplayName - _ComplianceFlags: $complianceFlags" -ForegroundColor Cyan
         }
         
-        # Based on your pattern:
-        # null = unlocked and never set
-        # 7 = locked for the first time
-        # 771 = has been unlocked
-        # 519 = has been relocked
-        
-        if ($complianceFlags -eq 7 -or $complianceFlags -eq 519) {
-            Write-HostAndLog "      → Item $itemDisplayName is LOCKED (_ComplianceFlags: $complianceFlags)" -ForegroundColor Yellow
+        # New logic: If _ComplianceFlags is not null/empty/0, attempt to unlock
+        # This handles all locked states regardless of specific flag values across different environments
+        if ($null -ne $complianceFlags -and $complianceFlags -ne "" -and $complianceFlags -ne 0) {
+            Write-HostAndLog "      → Item $itemDisplayName has (_ComplianceFlags: $complianceFlags)" -ForegroundColor Yellow
             return $true
         }
-        elseif ($null -eq $complianceFlags -or $complianceFlags -eq 771 -or $complianceFlags -eq "" -or $complianceFlags -eq 0) {
-            # Only log to file, don't display in console for items that don't need unlocking
-            # Uncomment the line below for debugging:
-            # Write-HostAndLog "      → Item $itemDisplayName has no compliance label or is already unlocked (_ComplianceFlags: $complianceFlags)" -ForegroundColor Gray
-            Write-VerboseAndLog "Item $itemDisplayName has no compliance label or is already unlocked (_ComplianceFlags: $complianceFlags)"
-            return $false
-        }
         else {
-            Write-HostAndLog "      → Item $itemDisplayName has unknown compliance flag value: $complianceFlags" -ForegroundColor Yellow
+            # Only log to file, don't display in console for items that don't need unlocking
+            Write-VerboseAndLog "Item $itemDisplayName has no compliance flags set (_ComplianceFlags: $complianceFlags)"
             return $false
         }
     }
@@ -575,10 +566,10 @@ foreach ($siteUrl in $siteUrls) {
                 }
                 
                 if ($recordItemsFound -eq 0) {
-                    Write-HostAndLog "    No locked record items found in this list" -ForegroundColor Gray
+                    Write-HostAndLog "    No items with compliance flags found in this list" -ForegroundColor Gray
                 }
                 else {
-                    Write-HostAndLog "    Summary: $recordItemsFound locked record items found, $unlockedInThisList unlocked" -ForegroundColor Green
+                    Write-HostAndLog "    Summary: $recordItemsFound items with compliance flags found, $unlockedInThisList unlocked" -ForegroundColor Green
                 }
                 
                 # Throttle protection: delay between lists
@@ -609,7 +600,7 @@ Write-HostAndLog "PROCESSING COMPLETE" -ForegroundColor Cyan
 Write-HostAndLog "=================================" -ForegroundColor Cyan
 Write-HostAndLog "Sites processed: $totalProcessedSites of $($siteUrls.Count)" -ForegroundColor Yellow
 Write-HostAndLog "Lists processed: $totalProcessedLists" -ForegroundColor Yellow
-Write-HostAndLog "Total locked record items unlocked: $totalUnlockedItems" -ForegroundColor Green
+Write-HostAndLog "Total record items unlocked: $totalUnlockedItems" -ForegroundColor Green
 Write-HostAndLog "=================================" -ForegroundColor Cyan
 Write-HostAndLog "Log file saved to: $script:LogFilePath" -ForegroundColor Gray
 
@@ -617,6 +608,6 @@ Write-HostAndLog "Log file saved to: $script:LogFilePath" -ForegroundColor Gray
 Write-Log "=== PROCESSING SUMMARY ===" -Level 'INFO'
 Write-Log "Sites processed: $totalProcessedSites of $($siteUrls.Count)" -Level 'INFO'
 Write-Log "Lists processed: $totalProcessedLists" -Level 'INFO'
-Write-Log "Total locked record items unlocked: $totalUnlockedItems" -Level 'SUCCESS'
+Write-Log "Total record items unlocked: $totalUnlockedItems" -Level 'SUCCESS'
 Write-Log "Throttling protection settings: Items=$DelayBetweenItems ms, Lists=$DelayBetweenLists ms, Sites=$DelayBetweenSites ms, MaxRetries=$MaxRetryAttempts" -Level 'INFO'
 Write-Log "=== UNLOCK RECORD ITEMS SCRIPT COMPLETED ===" -Level 'INFO'
