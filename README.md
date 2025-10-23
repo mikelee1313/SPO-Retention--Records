@@ -54,7 +54,6 @@ This PowerShell script automates the process of unlocking SharePoint Online item
 
 ### Required Permissions
 
-- **SharePoint Online Administrator** or **Site Collection Administrator** rights
 - **Azure AD App Registration** with:
   - Application permissions: `Sites.FullControl.All`
   - Certificate-based authentication configured
