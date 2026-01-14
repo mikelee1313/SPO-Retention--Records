@@ -313,7 +313,7 @@ This script processes **document libraries** and **lists**. It filters out:
 4. Graph API permissions insufficient
 
 **Debug:**
-- Enable ` = $true`
+- $EnableVerbose ` = $true`
 - Check debug output for `_ComplianceTag` field value
 
 ### Throttling Errors
