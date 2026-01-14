@@ -279,8 +279,8 @@ Example:
 
 SharePoint Online has throttling limits. This script includes protection, but for large tenants:
 
-- Increase `` (e.g., `1000` ms)
-- Increase `` (e.g., `2000` ms)
+- Increase `DelayBetweenLists` (e.g., `1000` ms)
+- Increase `DelayBetweenSites` (e.g., `2000` ms)
 - Process sites in smaller batches
 
 ### Library vs List
