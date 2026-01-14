@@ -46,15 +46,8 @@ The script supports both **report-only mode** (discover and report without chang
 
 ## 🚀 Quick Start
 
-### 1. Clone or Download the Script
 
-```powershell
-# Download the script
-git clone https://github.com/yourusername/reset-library-labels.git
-cd reset-library-labels
-```
-
-### 2. Configure Authentication
+### 1. Configure Authentication
 
 Create an Entra App Registration with certificate authentication:
 
@@ -84,7 +77,7 @@ Create an Entra App Registration with certificate authentication:
 4. Select **Microsoft Graph** > **Application permissions** > `Sites.Read.All`
 5. Click **Grant admin consent**
 
-### 3. Create Site List File
+### 2. Create Site List File
 
 Create a text file with SharePoint site URLs (one per line):
 
@@ -95,7 +88,7 @@ https://contoso.sharepoint.com/sites/site2
 https://contoso.sharepoint.com/sites/site3
 ```
 
-### 4. Configure the Script
+### 3. Configure the Script
 
 Edit the configuration section at the top of `Reset-Library-Labels.ps1`:
 
@@ -116,7 +109,7 @@ $sitelist = 'C:\temp\SPOSiteList.txt'
 $resetlabel = $false # Start with report-only mode
 ```
 
-### 5. Run the Script
+### 4. Run the Script
 
 First, run in **report-only mode** to see what will be affected:
 
@@ -135,18 +128,18 @@ Review the output and log file. When ready, enable reset mode:
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `` | Boolean | `False` | Enable detailed debug output including Graph API calls |
-| `` | String | `$""` | **Empty string**: Reset ANY label found<br>**Specific name**: Only reset that label |
-| `` | String | Required | Entra Application (Client) ID |
-| `` | String | Required | Tenant ID (GUID) |
-| `` | String | Required | Certificate thumbprint |
-| `` | String | Required | Path to text file with site URLs |
-| `` | Array | `@('Site Assets', 'Site Pages')` | List names to skip |
-| `` | Boolean | `False` | `False` = Report only<br>`True` = Reset labels |
-| `` | Integer | `500` | Milliseconds delay between list operations |
-| `` | Integer | `1000` | Milliseconds delay between site connections |
-| `` | Integer | `5` | Maximum retry attempts for throttled requests |
-| `` | Integer | `5000` | Base delay (ms) for exponential backoff |
+| `$EnableVerbose` | Boolean | `False` | Enable detailed debug output including Graph API calls |
+| `$LabelName` | String | `$""` | **Empty string**: Reset ANY label found<br>**Specific name**: Only reset that label |
+| `$appID` | String | Required | Entra Application (Client) ID |
+| `$tenant` | String | Required | Tenant ID (GUID) |
+| `$thumbprint` | String | Required | Certificate thumbprint |
+| `$sitelist ` | String | Required | Path to text file with site URLs |
+| `$ignoreListNames` | Array | `@('Site Assets', 'Site Pages')` | List names to skip |
+| `$resetlabel` | Boolean | `False` | `False` = Report only<br>`True` = Reset labels |
+| `$DelayBetweenLists` | Integer | `500` | Milliseconds delay between list operations |
+| `$DelayBetweenSites` | Integer | `1000` | Milliseconds delay between site connections |
+| `$MaxRetryAttempts ` | Integer | `5` | Maximum retry attempts for throttled requests |
+| `$BaseRetryDelay` | Integer | `5000` | Base delay (ms) for exponential backoff |
 
 ## 📖 Usage Examples
 
