@@ -129,7 +129,7 @@ Review the output and log file. When ready, enable reset mode:
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
 | `$EnableVerbose` | Boolean | `False` | Enable detailed debug output including Graph API calls |
-| `$LabelName` | String | `$""` | **Empty string**: Reset ANY label found<br>**Specific name**: Only reset that label |
+| `$LabelName` | String | `""` | **Empty string**: Reset ANY label found<br>**Specific name**: Only reset that label |
 | `$appID` | String | Required | Entra Application (Client) ID |
 | `$tenant` | String | Required | Tenant ID (GUID) |
 | `$thumbprint` | String | Required | Certificate thumbprint |
